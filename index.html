@@ -7,28 +7,20 @@
     <link href="https://googleapis.com" rel="stylesheet">
     <style>
         body, html { margin: 0; padding: 0; min-height: 100vh; font-family: 'Montserrat', sans-serif; color: white; }
-        .background { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.6)), url('forest.jpg') no-repeat center center fixed; 
-            background-size: cover; background-color: #1a2a1a; z-index: -1; 
-        }
+        .background { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.6)), url('forest.jpg') no-repeat center center fixed; background-size: cover; background-color: #1a2a1a; z-index: -1; }
         .container { width: 95%; max-width: 100%; margin: 0 auto; padding: 50px 0; text-align: center; }
         h1 { font-family: 'Lora', serif; font-size: clamp(2rem, 5vw, 3rem); margin-bottom: 30px; text-shadow: 2px 2px 10px rgba(0,0,0,0.7); }
         .controls { margin-bottom: 40px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
         .btn, .sort-select { background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 12px 25px; border-radius: 50px; cursor: pointer; backdrop-filter: blur(10px); font-family: inherit; font-size: 0.9rem; }
         .sort-select option { color: #333; background: white; }
         .graveyard { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 25px; width: 100%; }
-        .pet-card { background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(12px); padding: 30px 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); position: relative; transition: 0.3s; min-height: 240px; display: flex; flex-direction: column; justify-content: center; }
-        .pet-photo { width: 100px; height: 100px; border-radius: 50%; margin: 0 auto 15px; object-fit: cover; border: 2px solid white; display: block; }
+        .pet-card { background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(12px); padding: 30px 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); position: relative; min-height: 240px; display: flex; flex-direction: column; justify-content: center; }
         .pet-type-text { height: 100px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; font-style: italic; opacity: 0.8; font-size: 1.1rem; }
         .pet-name { font-family: 'Lora', serif; font-size: 1.4rem; margin-bottom: 5px; }
         .pet-dates { font-size: 0.85rem; opacity: 0.6; }
-        .del-btn { display: none; position: absolute; top: 10px; right: 10px; background: #ff4757; color: white; border: none; border-radius: 50%; width: 26px; height: 26px; cursor: pointer; z-index: 5; }
         #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; z-index: 1000; }
         .form-content { background: white; color: #333; padding: 30px; border-radius: 25px; width: 90%; max-width: 380px; text-align: left; }
         .form-content input, .form-content select { width: 100%; padding: 12px; margin: 8px 0 15px 0; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; }
-        #previewContainer { text-align: center; margin-bottom: 15px; display: none; }
-        #previewImg { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid #2d3436; }
     </style>
 </head>
 <body>
@@ -37,130 +29,52 @@
 <div class="container">
     <h1>Кладбище домашних животных</h1>
     <div class="controls">
-        <button class="btn" onclick="openAddModal()">Добавить друга</button>
+        <button class="btn" onclick="toggleModal(true)">Добавить друга</button>
         <select class="sort-select" id="sortSelect" onchange="render()">
             <option value="new">Сначала новые</option>
             <option value="name">По имени (А-Я)</option>
             <option value="birth">По году рождения</option>
         </select>
     </div>
-    <div class="graveyard" id="petGrid">Загрузка памяти...</div>
+    <div class="graveyard" id="petGrid">
+        <!-- Сюда мы вручную будем вставлять карточки тех, кого ты одобришь -->
+        <div style="grid-column: 1/-1; opacity: 0.6;">Здесь будут храниться добрые воспоминания...</div>
+    </div>
 </div>
 
 <div id="modal">
     <div class="form-content">
         <h2 style="margin-top:0; font-family:'Lora'">Память о питомце</h2>
-        <div id="previewContainer">
-            <img id="previewImg" src=""><p style="font-size:0.7rem; color: #666; margin: 5px 0;">Так будет выглядеть мордочка</p>
-        </div>
         <input type="text" id="name" placeholder="Кличка...">
         <select id="type">
             <option value="Кошка">Кошка</option><option value="Собака">Собака</option><option value="Птица">Птица</option><option value="Рыбка">Рыбка</option><option value="Паук">Паук</option><option value="Лошадь">Лошадь</option><option value="Рептилия">Рептилия</option><option value="Грызун">Грызун</option><option value="Черепаха">Черепаха</option>
         </select>
         <div style="display:flex; gap:10px"><input type="number" id="birth" placeholder="Рождение"><input type="number" id="death" placeholder="Уход"></div>
-        <label style="font-size:0.8rem; color:#666">Фото (мордочка):</label>
-        <input type="file" id="photoInput" accept="image/*" onchange="handleFileSelect(this)">
-        <button class="btn" style="background:#2d3436; width:100%; color:white; margin-top: 10px;" onclick="savePet()">Сохранить</button>
+        <button class="btn" style="background:#2d3436; width:100%; color:white; margin-top: 10px;" onclick="sendMemory()">Отправить запись</button>
         <button onclick="toggleModal(false)" style="width:100%; background:none; border:none; margin-top:10px; color:gray; cursor:pointer;">Отмена</button>
     </div>
 </div>
 
-<div onclick="toggleAdminMode()" style="position:fixed; bottom:5px; right:5px; width:20px; height:20px; opacity:0.05; cursor:pointer;">.</div>
-
 <script>
-    const dbUrl = "https://firebasedatabase.app";
-
-    let pets = [];
-    let adminMode = false;
-    let currentBase64 = null;
-    const forbidden = ["хуй", "пизд", "ебл", "сук", "бля", "уеб", "залуп", "гандон", "чмо", "курва", "пидор"];
-
-    async function loadPets() {
-        try {
-            const response = await fetch(`${dbUrl}.json`);
-            const data = await response.json();
-            pets = data ? Object.keys(data).map(key => ({...data[key], fireId: key})) : [];
-            render();
-        } catch (e) {
-            document.getElementById('petGrid').innerHTML = "Ошибка связи. Обновите страницу.";
-        }
-    }
-
-    window.render = function() {
-        const grid = document.getElementById('petGrid');
-        const sort = document.getElementById('sortSelect').value;
-        grid.innerHTML = '';
-        let list = [...pets];
-        
-        if(sort === 'name') list.sort((a,b) => a.name.localeCompare(b.name));
-        else if(sort === 'birth') list.sort((a,b) => a.birth - b.birth);
-        else list.sort((a,b) => b.id - a.id);
-
-        if (list.length === 0) grid.innerHTML = '<div style="grid-column: 1/-1; opacity: 0.5;">Здесь пока тихо... Будьте первыми.</div>';
-
-        list.forEach((pet) => {
-            const media = pet.photo ? `<img src="${pet.photo}" class="pet-photo">` : `<div class="pet-type-text">${pet.type}</div>`;
-            grid.innerHTML += `
-                <div class="pet-card">
-                    <button class="del-btn" style="display:${adminMode ? 'block' : 'none'}" onclick="removePet('${pet.fireId}')">×</button>
-                    ${media}
-                    <div class="pet-name">${pet.name}</div>
-                    <div class="pet-dates">${pet.birth} — ${pet.death}</div>
-                </div>`;
-        });
-    }
-
-    window.savePet = async function() {
+    function sendMemory() {
         const name = document.getElementById('name').value.trim();
-        const birth = parseInt(document.getElementById('birth').value);
-        const death = parseInt(document.getElementById('death').value);
+        const birth = document.getElementById('birth').value;
+        const death = document.getElementById('death').value;
         const type = document.getElementById('type').value;
 
         if (!name || !birth || !death) return alert("Заполните кличку и даты");
-        if (forbidden.some(word => name.toLowerCase().includes(word.toLowerCase()))) return alert("Используйте корректное имя");
 
-        const petData = { id: Date.now(), name, birth, death, type, photo: currentBase64 };
-
-        try {
-            await fetch(`${dbUrl}.json`, { method: 'POST', body: JSON.stringify(petData) });
-            toggleModal(false);
-            loadPets();
-        } catch (e) { alert("Ошибка при сохранении. Попробуйте с VPN или после публикации на GitHub."); }
+        // Вместо сложной базы сайт просто откроет твой GitHub для создания "заявки"
+        const body = `Пожалуйста, добавьте моего друга:%0AКличка: ${name}%0AВид: ${type}%0AГоды: ${birth}-${death}`;
+        const url = `https://github.com{name}&body=${body}`;
+        
+        window.open(url, '_blank');
+        toggleModal(false);
+        alert("Запись сформирована! Просто нажмите зеленую кнопку 'Submit' на открывшейся странице GitHub, и я увижу ваше сообщение.");
     }
 
-    window.removePet = async function(fireId) {
-        if(confirm("Удалить запись?")) {
-            await fetch(`${dbUrl}/${fireId}.json`, { method: 'DELETE' });
-            loadPets();
-        }
-    }
-
-    window.toggleAdminMode = function() {
-        const pass = prompt("Пароль:");
-        if (pass === "f37IUYFR23giwt2rRR") { adminMode = !adminMode; render(); }
-    }
-
-    window.handleFileSelect = function(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = (e) => { 
-                currentBase64 = e.target.result; 
-                document.getElementById('previewImg').src = currentBase64; 
-                document.getElementById('previewContainer').style.display = 'block'; 
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
-
-    window.openAddModal = function() { 
-        currentBase64 = null;
-        document.getElementById('name').value = '';
-        document.getElementById('previewContainer').style.display = 'none'; 
-        toggleModal(true); 
-    }
-    window.toggleModal = function(show) { document.getElementById('modal').style.display = show ? 'flex' : 'none'; }
-
-    loadPets();
+    function toggleModal(show) { document.getElementById('modal').style.display = show ? 'flex' : 'none'; }
+    function render() { /* Сортировка будет работать позже, когда добавим записи */ }
 </script>
 </body>
 </html>
